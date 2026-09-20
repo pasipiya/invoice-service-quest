@@ -57,8 +57,18 @@ compare: ## Benchmark both implementations n=10 and compare with benchstat
 	./scripts/compare.sh
 
 .PHONY: demo
-demo: ## Show the statement cost of one invoice request (server must be running)
-	@curl -s -D - -o /dev/null http://localhost:8080/orders/1/invoice | grep -i x-query-count
+demo: ## Show statement cost per order for both endpoints (server must be running)
+	@printf '%-8s %-8s %10s %10s\n' order lines invoice summary
+	@printf '%s\n' "-----------------------------------------"
+	@for spec in "7 1" "2 5" "1 200"; do \
+	  set -- $$spec; \
+	  inv=$$(curl -s -D - -o /dev/null http://localhost:8080/orders/$$1/invoice \
+	    | grep -i x-query-count | tr -d '\r' | awk '{print $$2}'); \
+	  sum=$$(curl -s -D - -o /dev/null http://localhost:8080/orders/$$1/summary \
+	    | grep -i x-query-count | tr -d '\r' | awk '{print $$2}'); \
+	  printf '%-8s %-8s %10s %10s\n' "$$1" "$$2" "$$inv" "$$sum"; \
+	done
+	@printf '\ninvoice: fixed, constant. summary: DEFECT-2 non-goal, untouched.\n'
 
 .PHONY: submission
 submission: ## Copy the two required docs to ../submission/, stamped with this commit
