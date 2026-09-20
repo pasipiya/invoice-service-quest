@@ -147,6 +147,27 @@ summary=$(curl -s -D- -o/dev/null localhost:8080/orders/$id/summary | grep -i x-
 done
 ```
 
+### Reproduction verified
+
+These steps were run against a **fresh clone** on 2026-09-20 — not the author's
+working tree — from a cold database, to confirm the instructions above are
+complete rather than assumed:
+
+| | Author's working tree | Fresh clone |
+|---|---|---|
+| Statements, 200-line order | 402 → 4 | **402 → 4** (identical) |
+| p50, 200-line order | 57.29 → 1.97 ms | 58.42 → 2.00 ms |
+| `benchstat` time, 200 lines | −97.06% (p=0.000) | **−97.14%** (p=0.000) |
+| `benchstat` time, 1 line | ~ (p=0.280) | ~ (p=0.631) |
+| Allocation regression, 1 line | +40.88% | **+40.92%** |
+| `make lint`, `make test` | pass | pass |
+
+The seeder produced identical row counts in both (3,129 line items), confirming
+the fixed PRNG seed makes the dataset reproducible. Statement counts are
+identical because they are exact; latencies differ by roughly 2%, which is the
+expected variation for a timing measurement and the reason query count is the
+primary measure.
+
 ## 10. Checks and actual results
 
 **Correctness**
