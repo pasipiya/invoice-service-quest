@@ -1,0 +1,9 @@
+# local env — never commit real values
+.env
+
+# build output
+/bin/
+*.local
+
+# go
+/vendor/
