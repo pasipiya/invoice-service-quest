@@ -91,6 +91,19 @@ unprompted; the reasoning for rejecting it is in the review.
 | 5 lines | 12 → 4 | 1.58 → 0.79 ms |
 | 200 lines | **402 → 4** | **57.29 → 1.97 ms** |
 
+```
+Statements per invoice request — bars to scale, 402 at full width
+
+  1 line      before  █ 4
+              after   █ 4
+
+  5 lines     before  █ 12
+              after   █ 4
+
+  200 lines   before  ███████████████████████████████████████████ 402
+              after   █ 4
+```
+
 `benchstat`, n=10 per implementation:
 
 | | 200 lines | 1 line |
@@ -98,6 +111,22 @@ unprompted; the reasoning for rejecting it is in the review.
 | Time | **−97.06%** (p=0.000) | no significant change (p=0.280) |
 | Bytes/op | −49.54% (p=0.000) | **+40.88%** (p=0.000) |
 | Allocs/op | −62.25% (p=0.000) | **+31.58%** (p=0.000) |
+
+```
+benchstat, n=10 per implementation — bar length = size of the change
+
+  200-line order                                        improvement
+    time         −97.06%  ██████████████████████████████████████   p=0.000
+    bytes/op     −49.54%  ███████████████████                      p=0.000
+    allocs/op    −62.25%  ████████████████████████                 p=0.000
+
+  1-line order                                            REGRESSION
+    time               ~  (no significant change)                  p=0.280
+    bytes/op     +40.88%  ████████████████ worse                   p=0.000
+    allocs/op    +31.58%  ████████████ worse                       p=0.000
+
+  Reported in both directions. The small-order cost is real and accepted.
+```
 
 ### The cost, stated plainly
 

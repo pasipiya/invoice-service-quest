@@ -58,6 +58,17 @@ All figures **measured** on 2026-09-20 against the seeded dataset (1,000 orders,
 | p95 | 5 | 12 |
 | **Maximum (order 1)** | **200** | **402** |
 
+```
+Statements per invoice request — baseline, bars to scale
+
+  1 line       █ 4
+  3.13 (mean)  █ 8
+  5 (p95)      █ 12
+  200 lines    ████████████████████████████████████████████ 402
+
+  Nothing caps the right-hand end. Add lines, add queries, for ever.
+```
+
 **Latency**, 30 samples after warm-up, `curl` against a local server:
 
 | Order | Lines | Statements | Median | p95 |
@@ -65,6 +76,14 @@ All figures **measured** on 2026-09-20 against the seeded dataset (1,000 orders,
 | 7 | 1 | 4 | 2.2 ms | 2.6 ms |
 | 2 | 5 | 12 | 3.7 ms | 4.6 ms |
 | **1** | **200** | **402** | **60.1 ms** | **73.4 ms** |
+
+```
+Median latency — baseline, bars to scale
+
+  1 line       ██ 2.2 ms
+  5 lines      ███ 3.7 ms
+  200 lines    ████████████████████████████████████████████ 60.1 ms
+```
 
 **This is a tail problem, not an average problem.** The typical order costs 8.3
 statements and renders in under 4 ms. The damage is concentrated entirely in
@@ -77,6 +96,16 @@ the dataset once costs 8,258 statements; batching would make it 3,000.
 |---|---|
 | Orders where the two endpoints disagree | **751 of 1,000 (75.1%)** |
 | Largest disagreement | **86 cents** (order 1) |
+
+```
+Orders affected, of 1,000
+
+  DEFECT-2  drifted tax rule    ██████████████████████████████░░░░░░░░░░  751
+  DEFECT-1  N+1 query pattern   ░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░░    1
+
+  DEFECT-2 affects nearly everyone a little. DEFECT-1 affects almost
+  nobody, severely, and gets worse without limit. Only one is fixed here.
+```
 
 **DEFECT-3** — no runtime evidence gathered. Demonstrating it needs fault
 injection, which was judged out of budget. Assessed from code inspection only,

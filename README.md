@@ -98,6 +98,19 @@ machine-independent; latencies are not. Reproduce with `make verify`.
 | 5 lines | 12 → 4 | 1.58 → 0.79 ms |
 | **200 lines** | **402 → 4** | **57.29 → 1.97 ms** |
 
+```
+Statements per invoice request — bars to scale, 402 at full width
+
+  1 line      before  █ 4
+              after   █ 4
+
+  5 lines     before  █ 12
+              after   █ 4
+
+  200 lines   before  ███████████████████████████████████████████ 402
+              after   █ 4
+```
+
 `benchstat` n=10: **−97.06%** time for the 200-line order (p=0.000); no
 significant change for a 1-line order (p=0.280); small orders allocate
 **+40.88%** more (p=0.000), an accepted trade-off recorded in ADR-001.

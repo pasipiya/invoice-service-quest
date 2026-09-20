@@ -27,9 +27,25 @@ N        SELECT tax_rule     ← per line
 2 + 2N   statements for one HTTP request
 ```
 
-For order 1 in the seed data (200 lines) that is **402 statements**. The cost
-grows linearly with order size, so the largest customers get the worst latency —
-the inverse of what the business would want.
+For order 1 in the seed data (200 lines) that is **402 statements**.
+
+```
+Statements as the order grows — nothing caps this
+
+     1 line    █ 4
+     5 lines   █ 12
+    25 lines   █ 52
+    50 lines   ███ 102
+   100 lines   ██████ 202
+   200 lines   ███████████ 402   ← the order in the seed data
+   500 lines   ████████████████████████████ 1002
+  1000 lines   ████████████████████████████████████████████████████████ 2002
+
+  Cost = 2 + 2N. The largest customers get the worst page. That is backwards.
+```
+
+The cost grows linearly with order size, so the largest customers get the worst
+latency — the inverse of what the business would want.
 
 **Why this one is worth fixing:** its primary measure is a deterministic
 integer, identical on every machine, and therefore assertable in an ordinary
