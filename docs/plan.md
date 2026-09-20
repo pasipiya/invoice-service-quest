@@ -62,8 +62,12 @@ History order is itself evidence: the directive must demonstrably predate the fi
 | 3 | `fix/invoice-n1-batched-lookups` | the fix, guard test, benchmarks — **opened as a PR** | tag `improved` |
 | 4 | `docs/results-and-handoff` | results, ADR-001, review example, handoff, final `directive.md` | tag `submission-v1` |
 
-Merges use `--no-ff`. Squash merging is avoided: it would collapse the commit
-ordering that evidences the process.
+Feature branches merge into `dev` with `--no-ff`. `dev` merges into `main`
+once, at the end, and `submission-v1` is tagged there — a reviewer lands on the
+repository's default branch, so the finished state must be the one they see.
+
+Squash merging is avoided throughout: it would collapse the commit ordering that
+evidences the process.
 
 ## Deliverables
 
