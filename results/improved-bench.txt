@@ -1,0 +1,26 @@
+goos: linux
+goarch: amd64
+pkg: github.com/pasipiya/invoice-service-quest/internal/invoice
+cpu: 13th Gen Intel(R) Core(TM) i5-13420H
+BenchmarkBuild_200Lines-12    	     606	   1762111 ns/op	  159662 B/op	    1671 allocs/op
+BenchmarkBuild_200Lines-12    	     711	   1676407 ns/op	  159610 B/op	    1671 allocs/op
+BenchmarkBuild_200Lines-12    	     709	   1758213 ns/op	  159610 B/op	    1671 allocs/op
+BenchmarkBuild_200Lines-12    	     658	   1884321 ns/op	  159618 B/op	    1671 allocs/op
+BenchmarkBuild_200Lines-12    	     717	   1736140 ns/op	  159615 B/op	    1671 allocs/op
+BenchmarkBuild_200Lines-12    	     686	   1732960 ns/op	  159611 B/op	    1671 allocs/op
+BenchmarkBuild_200Lines-12    	     679	   1718363 ns/op	  159610 B/op	    1671 allocs/op
+BenchmarkBuild_200Lines-12    	     708	   1714860 ns/op	  159612 B/op	    1671 allocs/op
+BenchmarkBuild_200Lines-12    	     703	   1740466 ns/op	  159613 B/op	    1671 allocs/op
+BenchmarkBuild_200Lines-12    	     738	   1817223 ns/op	  159612 B/op	    1671 allocs/op
+BenchmarkBuild_1Line-12       	    2244	    540066 ns/op	    3665 B/op	      50 allocs/op
+BenchmarkBuild_1Line-12       	    2134	    581286 ns/op	    3662 B/op	      50 allocs/op
+BenchmarkBuild_1Line-12       	    1719	    615877 ns/op	    3665 B/op	      50 allocs/op
+BenchmarkBuild_1Line-12       	    2724	    578898 ns/op	    3663 B/op	      50 allocs/op
+BenchmarkBuild_1Line-12       	    2566	    593161 ns/op	    3663 B/op	      50 allocs/op
+BenchmarkBuild_1Line-12       	    2312	    599419 ns/op	    3663 B/op	      50 allocs/op
+BenchmarkBuild_1Line-12       	    1848	    606458 ns/op	    3662 B/op	      50 allocs/op
+BenchmarkBuild_1Line-12       	    1802	    583349 ns/op	    3668 B/op	      50 allocs/op
+BenchmarkBuild_1Line-12       	    1785	    590614 ns/op	    3664 B/op	      50 allocs/op
+BenchmarkBuild_1Line-12       	    2252	    596700 ns/op	    3660 B/op	      50 allocs/op
+PASS
+ok  	github.com/pasipiya/invoice-service-quest/internal/invoice	24.728s

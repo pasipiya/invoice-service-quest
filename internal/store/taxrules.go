@@ -48,3 +48,39 @@ func (s *Store) GetTaxRuleForRegion(ctx context.Context, region string) (TaxRule
 	return TaxRule{}, fmt.Errorf("get tax rule %q after %d attempts: %w",
 		region, maxTaxRuleAttempts, lastErr)
 }
+
+// GetTaxRulesForRegions loads many tax rules in one statement, keyed by region.
+//
+// The batched counterpart to GetTaxRuleForRegion. It deliberately carries no
+// retry loop: DEFECT-3 is a declared non-goal of this change, so the flawed
+// retry behaviour is left exactly where it is rather than being propagated into
+// new code or quietly corrected as a side effect. See docs/defects.md.
+//
+// As with GetProductsByIDs, results are a map because row order is not
+// guaranteed, and absent regions are left to the caller to interpret.
+func (s *Store) GetTaxRulesForRegions(ctx context.Context, regions []string) (map[string]TaxRule, error) {
+	out := make(map[string]TaxRule, len(regions))
+	if len(regions) == 0 {
+		return out, nil
+	}
+
+	const q = `SELECT region, rate_bp FROM tax_rules WHERE region = ANY($1)`
+
+	rows, err := s.pool.Query(ctx, q, regions)
+	if err != nil {
+		return nil, fmt.Errorf("get tax rules for regions: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var tr TaxRule
+		if err := rows.Scan(&tr.Region, &tr.RateBP); err != nil {
+			return nil, fmt.Errorf("scan tax rule: %w", err)
+		}
+		out[tr.Region] = tr
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate tax rules: %w", err)
+	}
+	return out, nil
+}

@@ -1,0 +1,257 @@
+diff --git a/internal/invoice/service.go b/internal/invoice/service.go
+index 1522727..ac0d999 100644
+--- a/internal/invoice/service.go
++++ b/internal/invoice/service.go
+@@ -8,11 +8,15 @@ import (
+ )
+ 
+ // Repository is the persistence surface the invoice flow depends on.
++//
++// The product and tax-rule lookups are batched deliberately: an order's lines
++// are known before any of them is priced, so every product and every ship-to
++// region can be fetched in one statement each instead of two per line.
+ type Repository interface {
+ 	GetOrder(ctx context.Context, id int64) (store.Order, error)
+ 	ListLineItems(ctx context.Context, orderID int64) ([]store.LineItem, error)
+-	GetProductByID(ctx context.Context, id int64) (store.Product, error)
+-	GetTaxRuleForRegion(ctx context.Context, region string) (store.TaxRule, error)
++	GetProductsByIDs(ctx context.Context, ids []int64) (map[int64]store.Product, error)
++	GetTaxRulesForRegions(ctx context.Context, regions []string) (map[string]store.TaxRule, error)
+ }
+ 
+ // Service builds invoices.
+@@ -21,6 +25,59 @@ type Service struct{ repo Repository }
+ // New returns a Service backed by repo.
+ func New(repo Repository) *Service { return &Service{repo: repo} }
+ 
++// pricingData is everything the lines of an order need in order to be priced:
++// the product of each line and the tax rule of each line's ship-to region.
++type pricingData struct {
++	products map[int64]store.Product
++	rules    map[string]store.TaxRule
++}
++
++// loadPricingData fetches the products and tax rules referenced by items in
++// two statements, regardless of how many lines the order has.
++func (s *Service) loadPricingData(ctx context.Context, items []store.LineItem) (pricingData, error) {
++	productIDs := make([]int64, 0, len(items))
++	seenProduct := make(map[int64]struct{}, len(items))
++	regions := make([]string, 0, len(items))
++	seenRegion := make(map[string]struct{}, len(items))
++
++	for _, it := range items {
++		if _, ok := seenProduct[it.ProductID]; !ok {
++			seenProduct[it.ProductID] = struct{}{}
++			productIDs = append(productIDs, it.ProductID)
++		}
++		if _, ok := seenRegion[it.Region]; !ok {
++			seenRegion[it.Region] = struct{}{}
++			regions = append(regions, it.Region)
++		}
++	}
++
++	products, err := s.repo.GetProductsByIDs(ctx, productIDs)
++	if err != nil {
++		return pricingData{}, err
++	}
++	rules, err := s.repo.GetTaxRulesForRegions(ctx, regions)
++	if err != nil {
++		return pricingData{}, err
++	}
++	return pricingData{products: products, rules: rules}, nil
++}
++
++// forLine resolves the product and tax rule of one line, reporting a
++// not-found error identical in kind to the one the per-line lookups returned.
++func (d pricingData) forLine(it store.LineItem) (store.Product, store.TaxRule, error) {
++	product, ok := d.products[it.ProductID]
++	if !ok {
++		return store.Product{}, store.TaxRule{},
++			fmt.Errorf("line %d: product %d: %w", it.ID, it.ProductID, store.ErrNotFound)
++	}
++	rule, ok := d.rules[it.Region]
++	if !ok {
++		return store.Product{}, store.TaxRule{},
++			fmt.Errorf("line %d: tax rule %q: %w", it.ID, it.Region, store.ErrNotFound)
++	}
++	return product, rule, nil
++}
++
+ func (s *Service) Build(ctx context.Context, orderID int64) (Invoice, error) {
+ 	order, err := s.repo.GetOrder(ctx, orderID) // statement 1
+ 	if err != nil {
+@@ -32,6 +89,11 @@ func (s *Service) Build(ctx context.Context, orderID int64) (Invoice, error) {
+ 		return Invoice{}, err
+ 	}
+ 
++	data, err := s.loadPricingData(ctx, items) // statements 3 and 4
++	if err != nil {
++		return Invoice{}, err
++	}
++
+ 	inv := Invoice{
+ 		OrderID:      order.ID,
+ 		CustomerName: order.CustomerName,
+@@ -39,14 +101,9 @@ func (s *Service) Build(ctx context.Context, orderID int64) (Invoice, error) {
+ 	}
+ 
+ 	for _, it := range items {
+-		product, err := s.repo.GetProductByID(ctx, it.ProductID)
+-		if err != nil {
+-			return Invoice{}, fmt.Errorf("line %d: %w", it.ID, err)
+-		}
+-
+-		rule, err := s.repo.GetTaxRuleForRegion(ctx, it.Region)
++		product, rule, err := data.forLine(it)
+ 		if err != nil {
+-			return Invoice{}, fmt.Errorf("line %d: %w", it.ID, err)
++			return Invoice{}, err
+ 		}
+ 
+ 		net := product.UnitPriceCents * int64(it.Quantity)
+diff --git a/internal/invoice/summary.go b/internal/invoice/summary.go
+index a309783..0597a3a 100644
+--- a/internal/invoice/summary.go
++++ b/internal/invoice/summary.go
+@@ -22,13 +22,14 @@ func (s *Service) Summarise(ctx context.Context, orderID int64) (Summary, error)
+ 		return Summary{}, err
+ 	}
+ 
++	data, err := s.loadPricingData(ctx, items)
++	if err != nil {
++		return Summary{}, err
++	}
++
+ 	sum := Summary{OrderID: orderID, LineCount: len(items)}
+ 	for _, it := range items {
+-		product, err := s.repo.GetProductByID(ctx, it.ProductID)
+-		if err != nil {
+-			return Summary{}, err
+-		}
+-		rule, err := s.repo.GetTaxRuleForRegion(ctx, it.Region)
++		product, rule, err := data.forLine(it)
+ 		if err != nil {
+ 			return Summary{}, err
+ 		}
+diff --git a/internal/store/products.go b/internal/store/products.go
+index 30f51e8..751dac4 100644
+--- a/internal/store/products.go
++++ b/internal/store/products.go
+@@ -2,10 +2,7 @@ package store
+ 
+ import (
+ 	"context"
+-	"errors"
+ 	"fmt"
+-
+-	"github.com/jackc/pgx/v5"
+ )
+ 
+ // Product is a sellable item.
+@@ -16,16 +13,33 @@ type Product struct {
+ 	UnitPriceCents int64
+ }
+ 
+-func (s *Store) GetProductByID(ctx context.Context, id int64) (Product, error) {
+-	const q = `SELECT id, sku, name, unit_price_cents FROM products WHERE id = $1`
+-
+-	var p Product
+-	err := s.pool.QueryRow(ctx, q, id).Scan(&p.ID, &p.SKU, &p.Name, &p.UnitPriceCents)
+-	if errors.Is(err, pgx.ErrNoRows) {
+-		return Product{}, fmt.Errorf("product %d: %w", id, ErrNotFound)
++// GetProductsByIDs loads every product in ids with a single statement and
++// returns them keyed by ID. Duplicate ids are collapsed. Ids with no matching
++// row are simply absent from the map; the caller decides whether that is an
++// error.
++func (s *Store) GetProductsByIDs(ctx context.Context, ids []int64) (map[int64]Product, error) {
++	out := make(map[int64]Product, len(ids))
++	if len(ids) == 0 {
++		return out, nil
+ 	}
++
++	const q = `SELECT id, sku, name, unit_price_cents FROM products WHERE id = ANY($1)`
++
++	rows, err := s.pool.Query(ctx, q, ids)
+ 	if err != nil {
+-		return Product{}, fmt.Errorf("get product %d: %w", id, err)
++		return nil, fmt.Errorf("get products by ids: %w", err)
++	}
++	defer rows.Close()
++
++	for rows.Next() {
++		var p Product
++		if err := rows.Scan(&p.ID, &p.SKU, &p.Name, &p.UnitPriceCents); err != nil {
++			return nil, fmt.Errorf("scan product: %w", err)
++		}
++		out[p.ID] = p
++	}
++	if err := rows.Err(); err != nil {
++		return nil, fmt.Errorf("iterate products: %w", err)
+ 	}
+-	return p, nil
++	return out, nil
+ }
+diff --git a/internal/store/taxrules.go b/internal/store/taxrules.go
+index 917f937..82163eb 100644
+--- a/internal/store/taxrules.go
++++ b/internal/store/taxrules.go
+@@ -2,10 +2,7 @@ package store
+ 
+ import (
+ 	"context"
+-	"errors"
+ 	"fmt"
+-
+-	"github.com/jackc/pgx/v5"
+ )
+ 
+ // TaxRule is the tax rate applying to a region, in basis points.
+@@ -14,25 +11,32 @@ type TaxRule struct {
+ 	RateBP int
+ }
+ 
+-// maxTaxRuleAttempts bounds the retry loop below.
+-const maxTaxRuleAttempts = 5
++// GetTaxRulesForRegions loads the rules for every region named with a single
++// statement and returns them keyed by region. Regions with no rule are absent
++// from the map; the caller decides whether that is an error.
++func (s *Store) GetTaxRulesForRegions(ctx context.Context, regions []string) (map[string]TaxRule, error) {
++	out := make(map[string]TaxRule, len(regions))
++	if len(regions) == 0 {
++		return out, nil
++	}
++
++	const q = `SELECT region, rate_bp FROM tax_rules WHERE region = ANY($1)`
+ 
+-func (s *Store) GetTaxRuleForRegion(ctx context.Context, region string) (TaxRule, error) {
+-	const q = `SELECT region, rate_bp FROM tax_rules WHERE region = $1`
++	rows, err := s.pool.Query(ctx, q, regions)
++	if err != nil {
++		return nil, fmt.Errorf("get tax rules by regions: %w", err)
++	}
++	defer rows.Close()
+ 
+-	var lastErr error
+-	for attempt := 0; attempt < maxTaxRuleAttempts; attempt++ {
++	for rows.Next() {
+ 		var tr TaxRule
+-		err := s.pool.QueryRow(ctx, q, region).Scan(&tr.Region, &tr.RateBP)
+-		if err == nil {
+-			return tr, nil
+-		}
+-		if errors.Is(err, pgx.ErrNoRows) {
+-			lastErr = fmt.Errorf("tax rule %q: %w", region, ErrNotFound)
+-			continue
++		if err := rows.Scan(&tr.Region, &tr.RateBP); err != nil {
++			return nil, fmt.Errorf("scan tax rule: %w", err)
+ 		}
+-		lastErr = err
++		out[tr.Region] = tr
++	}
++	if err := rows.Err(); err != nil {
++		return nil, fmt.Errorf("iterate tax rules: %w", err)
+ 	}
+-	return TaxRule{}, fmt.Errorf("get tax rule %q after %d attempts: %w",
+-		region, maxTaxRuleAttempts, lastErr)
++	return out, nil
+ }
