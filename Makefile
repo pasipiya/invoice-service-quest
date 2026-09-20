@@ -60,6 +60,16 @@ compare: ## Benchmark both implementations n=10 and compare with benchstat
 demo: ## Show the statement cost of one invoice request (server must be running)
 	@curl -s -D - -o /dev/null http://localhost:8080/orders/1/invoice | grep -i x-query-count
 
+.PHONY: submission
+submission: ## Copy the two required docs to ../submission/, stamped with this commit
+	@mkdir -p ../submission
+	@sha=$$(git rev-parse HEAD); \
+	for f in intent directive; do \
+	  { echo "<!-- Canonical: https://github.com/pasipiya/invoice-service-quest/blob/$$sha/docs/$$f.md -->"; \
+	    echo; cat docs/$$f.md; } > ../submission/$$f.md; \
+	  echo "wrote ../submission/$$f.md (stamped $$sha)"; \
+	done
+
 .PHONY: env
 env: ## Create .env from .env.example if it does not exist
 	@test -f .env && echo ".env already exists" || (cp .env.example .env && echo "created .env")
