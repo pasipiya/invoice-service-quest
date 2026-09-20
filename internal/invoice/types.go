@@ -27,9 +27,12 @@ type Invoice struct {
 	GrossCents   int64  `json:"gross_cents"`
 }
 
-// taxCents applies a basis-point rate to a net amount, rounding half up.
-// Half up is the documented convention for this service; see docs/defects.md
+// TaxCents applies a basis-point rate to a net amount, rounding half up.
+// Half up is the documented convention for this service. It is exported so
+// that the preserved baseline implementation in the legacy subpackage can use
+// the same rule rather than holding a second copy of it — the mistake that
+// DEFECT-2 exists to illustrate. See docs/defects.md
 // for the second, drifted copy of this rule.
-func taxCents(netCents int64, rateBP int) int64 {
+func TaxCents(netCents int64, rateBP int) int64 {
 	return (netCents*int64(rateBP) + 5000) / 10000
 }

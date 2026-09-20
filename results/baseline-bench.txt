@@ -1,0 +1,26 @@
+goos: linux
+goarch: amd64
+pkg: github.com/pasipiya/invoice-service-quest/internal/invoice
+cpu: 13th Gen Intel(R) Core(TM) i5-13420H
+BenchmarkBuild_200Lines-12    	      19	  60465936 ns/op	  317018 B/op	    4431 allocs/op
+BenchmarkBuild_200Lines-12    	      26	  55307937 ns/op	  316321 B/op	    4427 allocs/op
+BenchmarkBuild_200Lines-12    	      24	  54055054 ns/op	  316740 B/op	    4427 allocs/op
+BenchmarkBuild_200Lines-12    	      21	  53990695 ns/op	  316324 B/op	    4427 allocs/op
+BenchmarkBuild_200Lines-12    	      19	  59213593 ns/op	  316030 B/op	    4427 allocs/op
+BenchmarkBuild_200Lines-12    	      20	  59005475 ns/op	  316656 B/op	    4427 allocs/op
+BenchmarkBuild_200Lines-12    	      21	  52795490 ns/op	  316318 B/op	    4427 allocs/op
+BenchmarkBuild_200Lines-12    	      18	  59920214 ns/op	  316203 B/op	    4427 allocs/op
+BenchmarkBuild_200Lines-12    	      20	  63115638 ns/op	  316260 B/op	    4427 allocs/op
+BenchmarkBuild_200Lines-12    	      20	  67656312 ns/op	  316644 B/op	    4427 allocs/op
+BenchmarkBuild_1Line-12       	    2138	    525986 ns/op	    2600 B/op	      38 allocs/op
+BenchmarkBuild_1Line-12       	    2605	    574189 ns/op	    2600 B/op	      38 allocs/op
+BenchmarkBuild_1Line-12       	    2576	    534649 ns/op	    2599 B/op	      38 allocs/op
+BenchmarkBuild_1Line-12       	    2960	    579591 ns/op	    2600 B/op	      38 allocs/op
+BenchmarkBuild_1Line-12       	    2079	    583001 ns/op	    2597 B/op	      38 allocs/op
+BenchmarkBuild_1Line-12       	    1870	    629707 ns/op	    2602 B/op	      38 allocs/op
+BenchmarkBuild_1Line-12       	    2164	    638041 ns/op	    2601 B/op	      38 allocs/op
+BenchmarkBuild_1Line-12       	    2100	    598535 ns/op	    2597 B/op	      38 allocs/op
+BenchmarkBuild_1Line-12       	    2037	    573565 ns/op	    2601 B/op	      38 allocs/op
+BenchmarkBuild_1Line-12       	    3016	    573272 ns/op	    2599 B/op	      38 allocs/op
+PASS
+ok  	github.com/pasipiya/invoice-service-quest/internal/invoice	25.801s

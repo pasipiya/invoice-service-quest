@@ -44,6 +44,18 @@ lint: ## Static analysis
 	gofmt -l . | tee /dev/stderr | (! read)
 	go vet ./...
 
+.PHONY: verify
+verify: ## Measure both implementations and write results/
+	go run ./cmd/verify
+
+.PHONY: bench
+bench: ## Run the invoice benchmarks once
+	go test ./internal/invoice/ -run '^$$' -bench . -benchtime 50x
+
+.PHONY: compare
+compare: ## Benchmark both implementations n=10 and compare with benchstat
+	./scripts/compare.sh
+
 .PHONY: demo
 demo: ## Show the statement cost of one invoice request (server must be running)
 	@curl -s -D - -o /dev/null http://localhost:8080/orders/1/invoice | grep -i x-query-count

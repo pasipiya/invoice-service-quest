@@ -1,0 +1,21 @@
+goos: linux
+goarch: amd64
+pkg: github.com/pasipiya/invoice-service-quest/internal/invoice
+cpu: 13th Gen Intel(R) Core(TM) i5-13420H
+                  │ results/baseline-bench.txt │     results/improved-bench.txt      │
+                  │           sec/op           │   sec/op     vs base                │
+Build_200Lines-12                 59.110m ± 9%   1.738m ± 5%  -97.06% (p=0.000 n=10)
+Build_1Line-12                     576.9µ ± 9%   591.9µ ± 2%        ~ (p=0.280 n=10)
+geomean                            5.839m        1.014m       -82.63%
+
+                  │ results/baseline-bench.txt │      results/improved-bench.txt      │
+                  │            B/op            │     B/op      vs base                │
+Build_200Lines-12                 308.9Ki ± 0%   155.9Ki ± 0%  -49.54% (p=0.000 n=10)
+Build_1Line-12                    2.539Ki ± 0%   3.577Ki ± 0%  +40.88% (p=0.000 n=10)
+geomean                           28.01Ki        23.61Ki       -15.69%
+
+                  │ results/baseline-bench.txt │     results/improved-bench.txt      │
+                  │         allocs/op          │  allocs/op   vs base                │
+Build_200Lines-12                  4.427k ± 0%   1.671k ± 0%  -62.25% (p=0.000 n=10)
+Build_1Line-12                      38.00 ± 0%    50.00 ± 0%  +31.58% (p=0.000 n=10)
+geomean                             410.2         289.1       -29.53%

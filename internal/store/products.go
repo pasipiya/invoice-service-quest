@@ -35,3 +35,40 @@ func (s *Store) GetProductByID(ctx context.Context, id int64) (Product, error) {
 	}
 	return p, nil
 }
+
+// GetProductsByIDs loads many products in one statement, keyed by id.
+//
+// This is the batched counterpart to GetProductByID and the fix for DEFECT-1.
+// Results are returned as a map rather than a slice on purpose: the database
+// makes no promise about the order of rows returned by ANY($1), so callers must
+// not index results positionally against the ids they asked for.
+//
+// Ids not present in the database are simply absent from the map; the caller
+// decides whether that is an error, because only the caller knows which line
+// item the id came from.
+func (s *Store) GetProductsByIDs(ctx context.Context, ids []int64) (map[int64]Product, error) {
+	out := make(map[int64]Product, len(ids))
+	if len(ids) == 0 {
+		return out, nil
+	}
+
+	const q = `SELECT id, sku, name, unit_price_cents FROM products WHERE id = ANY($1)`
+
+	rows, err := s.pool.Query(ctx, q, ids)
+	if err != nil {
+		return nil, fmt.Errorf("get products by ids: %w", err)
+	}
+	defer rows.Close()
+
+	for rows.Next() {
+		var p Product
+		if err := rows.Scan(&p.ID, &p.SKU, &p.Name, &p.UnitPriceCents); err != nil {
+			return nil, fmt.Errorf("scan product: %w", err)
+		}
+		out[p.ID] = p
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("iterate products: %w", err)
+	}
+	return out, nil
+}
