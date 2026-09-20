@@ -12,7 +12,7 @@
 A small Go service over PostgreSQL with one user-facing flow: rendering a
 customer invoice for an order. The repository is purpose-built for this
 exercise. Three defects were introduced deliberately and labelled in the source
-and in [`docs/defects.md`](defects.md). All data is synthetic, generated from a
+and in [`docs/defects.md`](https://github.com/pasipiya/invoice-service-quest/blob/submission-v1/docs/defects.md). All data is synthetic, generated from a
 fixed PRNG seed so that every measurement below is reproducible by a reviewer.
 
 The exercise is to pick **one** of the three, fix it, and prove the fix.
@@ -238,7 +238,8 @@ figures are local, single-machine measurements against synthetic data.
 
 | Document | Contents |
 |---|---|
-| [`defects.md`](defects.md) | The three defects in detail |
-| [`plan.md`](plan.md) | Execution plan for the exercise |
-| `directive.md` | Working instructions, completion criteria, results and handoff |
-| `decision-record.md` | ADR-001: alternatives considered for the fix itself |
+| [`defects.md`](https://github.com/pasipiya/invoice-service-quest/blob/submission-v1/docs/defects.md) | The three defects in detail |
+| [`plan.md`](https://github.com/pasipiya/invoice-service-quest/blob/submission-v1/docs/plan.md) | Execution plan for the exercise |
+| [`directive.md`](https://github.com/pasipiya/invoice-service-quest/blob/submission-v1/docs/directive.md) | Working instructions, completion criteria, results and handoff |
+| [`decision-record.md`](https://github.com/pasipiya/invoice-service-quest/blob/submission-v1/docs/decision-record.md) | ADR-001: alternatives considered for the fix itself |
+| [`review/ai-correction-01.md`](https://github.com/pasipiya/invoice-service-quest/blob/submission-v1/review/ai-correction-01.md) | An AI proposal for this fix, reviewed and corrected |
